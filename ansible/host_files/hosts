@@ -1,0 +1,2 @@
+[base_install]
+localhost ansible_connection=local

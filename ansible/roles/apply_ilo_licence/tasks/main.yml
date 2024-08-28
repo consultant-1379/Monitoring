@@ -1,0 +1,14 @@
+---
+#~# Role for adding user account & ilo licence
+
+- name: Apply ilo licence
+  delegate_to: localhost
+  apply_ilo_licence:
+    ip_address:   "{{ inventory_hostname }}"
+    ilo_username: "{{ ilo_username }}"
+    ilo_password: "{{ ilo_password }}"
+    ilo_licence: "{{ ilo_licence }}"
+  register: licence_result
+
+#~# End Role
+...

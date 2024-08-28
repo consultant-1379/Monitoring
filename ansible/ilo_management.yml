@@ -1,0 +1,84 @@
+---
+#~# Management playbook for passed ILO list
+# Ansible playbook to perform certain management tasks against an inventory of ILO IP addresses
+# This playbook/roles have certain dependancies of packages being installed on the running machine.
+# By default, the playbook will install all dependancies (role - ilo_roles_dependencies).
+#
+# NB: REQUIREMENT TO POPULATE THE ILO HOSTS FILE WITH A LIST OF ILO IP ADDRESSES
+#     TO PERFORM ACTIONS AGAINST
+#     - File : <repo>/ansibe/host_files/ilo_list
+#     - Example:
+#         [ilos]
+#         10.xx.xx.xx
+#         10.xx.xx.xx
+#         10.xx.xx.xx
+#
+# There are several options/functions to running this playbook
+# All options are dependant on tags being passed in on playbook execution with '--tags'
+#
+# Usage 1 (Add ILO User Accounts):
+# --------------
+# Playbook/Role will attempts to login to ILO IP with 1 of multiple user/psswd.
+# Role will then ensure all of the required user accounts are present & add if not.
+#
+#   ansible-playbook ilo_management.yml --tags user
+#
+# Usage 2 (Add ILO Licence):
+# --------------
+# Playbook/Role will update the ILO Licence with the licence specified in group_vars/all.yml
+# To change the licence to be applied, just modify the var ilo_licence in group_vars/all.yml
+#
+#    ansible-playbook ilo_management.yml --tags licence
+#
+# Usage 3 (Update ILO Firmware Version):
+# --------------
+# Playbook/Role will update the ILO Firmware with the latest version supported by the Playbook/Role
+# All the current supported firmware versions are located in the following directory:
+#   - <repo>/hpilo_fw/ILO2 | ILO4 | ILO5
+# Newer versions need to be downloaded manually into the above mentioned directory by using hpilo_cli python library.
+# hpilo_cli Documentation: https://seveas.github.io/python-hpilo/firmware.html#from-the-cli
+#
+#    ansible-playbook ilo_management.yml --tags firmware
+#
+# Usage 4 (Check ILO Firmware):
+# --------------
+# Playbook/Role will generate a csv report detailing the ILOs current firmware version
+# A report will then be generated & placed in the following directory:
+#   - <repo>/ansibe/playbook_reports/
+#
+#    ansible-playbook ilo_management.yml --tags check_fw
+#
+# Usage 5 (Change Host Power State via ILO):
+# --------------
+# Playbook/Role will change the powerstate (ON | OFF) of the server via the ILO
+#
+# Required Vars:
+#   - state: str('on' | 'off')
+#
+#    ansible-playbook ilo_management.yml --tags power -e state=on|off
+#
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    #~# Will Ensure all the Playbook/Role Dependancies are installed on the local Machine
+    - {role: ilo_roles_dependencies, tags: ['always']}
+
+- hosts: ilos
+  name: ILO Management Playbook { User A/C [--tags user] | Licence [--tags licence] | Firmware [--tags firmware] | Firmware Check [--tags check_fw]  | Change Power State [--tags power -e state=on|off ] }
+  connection: local
+  gather_facts: False
+  roles:
+    #~# Tries to login using default A/C's & adds any missing user A/C's
+    - {role: apply_ilo_users, tags: ['never','user','licence','snmp','firmware','power']}
+    #~# Applies the latest ILO licence
+    - {role: apply_ilo_licence, tags: ['never','licence'], when: user_result}
+    #~# Updates the ILO firmware to the latest version
+    - {role: apply_ilo_firmware, tags: ['never','firmware'], when: user_result}
+    #~# Checks the ILO firmware version
+    - {role: check_ilo_firmware, tags: ['never','check_fw','firmware']}
+    #~# Changes the server power state via ILO
+    - {role: ilo_change_host_powerstate, tags: ['never','power']}
+
+#~# End Playbook
+...

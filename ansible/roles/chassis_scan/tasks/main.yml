@@ -1,0 +1,12 @@
+---
+# file: roles/chassis_mirror/tasks/main.yml
+
+- name: Gather Chassis/Blade Information
+  delegate_to: localhost
+  chassis_poll:
+    hostname: "{{ hostname }}"
+    dns_oa1: "{{ ip_oa1 }}"
+    dns_oa2: "{{ ip_oa2 }}"
+  when: excluded == 0 and (dns_oa1 != 'Unknown' or dns_oa2 != 'Unknown')
+  register: task_output
+...

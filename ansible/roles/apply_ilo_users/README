@@ -1,0 +1,38 @@
+
+######################################################
+###     Role : apply_ilo_users Usage (HP ONLY)     ###
+######################################################
+Purpose:
+    Add the standard ILO user accounts to a provided ILO IP address
+
+Structure:
+    tasks:
+        - main.yml
+    library:
+        - apply_ilo_users.py
+
+main.yml:
+    Calls on the custom ansible role "library/apply_ilo_users.py"
+
+    Requirements: (
+        ip_address host var [xx.xx.xx.xx]
+        ilo_username group var [username]
+        ilo_password group var [password]
+    )
+
+    +-------------- Call Custom Role --------------+
+    |   apply_ilo_users:                           |
+    |       ip_address:     "{{ ip_address }}"     |
+    |       ilo_username:   "{{ ilo_username }}"   |
+    |       ilo_password:   "{{ ilo_password }}"   |
+    +----------------------------------------------+
+
+apply_ilo_users.py:
+    Takes the passed "{{ ip_address }}", "{{ ilo_username }}", "{{ ilo_password }}" and tries to connect via the hpilo python module.
+    It then polls the ILO for the current list of active ILO user accounts.
+    If there are any accounts missing from the set other_logins dict, then it adds the missing A/C.
+
+    Requirements: Manually set in module(
+        OTHER_LOGINS: dict() - Example->{'username': 'password','username2': 'password2'}
+    )
+

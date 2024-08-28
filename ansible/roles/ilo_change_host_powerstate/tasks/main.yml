@@ -1,0 +1,39 @@
+---
+#~# Role for changing the powerstate of a server via the ILO
+
+- name: Change powerstate
+  vars:
+    power_mapping: {'on': True, 'off': False}
+  block:
+    - assert:
+        that:
+          - state is defined
+          - state in power_mapping
+        fail_msg:
+          - "Variable `state` is a required var."
+          - "it should be passed into the playbook on playbook execution"
+          - "Example: "
+          - "-e state=<on|off>"
+        success_msg: "Variable `state` is present & valid, playbook will continue."
+
+    #~# Task to get the server power state
+    - name: Change Host powerstate via ILO
+      command: hpilo_cli {{ inventory_hostname }} get_host_power_status
+      register: get_state_cmd
+
+    #~# Just output the std output information
+    - debug: var=get_state_cmd.stdout
+
+    #~# Task to change the server power state
+    - name: Change Host powerstate via ILO
+      command: hpilo_cli {{ inventory_hostname }} set_host_power {{ power_mapping[state] }}
+      register: command_result
+
+    #~# Just output the std output information
+    - debug: var=command_result.stdout
+  rescue:
+    #~# Just output the std error information
+    - debug: var=command_result.stderr_lines
+
+#~# End Role
+...

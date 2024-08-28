@@ -1,0 +1,5 @@
+---
+#~# 'ilo_roles_dependencies' role for installing any ILO Automation Dependencies
+ilo_username: 'monadmin'
+ilo_password: 'm0nadmin$123'
+...

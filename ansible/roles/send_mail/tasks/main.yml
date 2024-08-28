@@ -1,0 +1,27 @@
+---
+#~# Role for sending an Email
+#~# Required vars - mail_subject[string], mail_message[string], mail_to[string | list]
+#~# Optional vars - mail_display[string], mail_attachments[string | list]
+
+  #~# Send Email without attachment
+  - name: Send e-mail to specified user(s)
+    mail:
+      subject: "{{mail_subject}}"
+      body: "{{mail_message}}"
+      from: "DoNotReply@ansible.server ({{ mail_display | default('Ansible Automated Mail') }})"
+      to: "{{mail_to}}"
+    delegate_to: localhost
+    when: "mail_attachments is not defined"
+  #~# Send Email with attachment
+  - name: Send e-mail with attachment(s) to specified user(s)
+    mail:
+      subject: "{{mail_subject}}"
+      body: "{{mail_message}}"
+      from: "DoNotReply@ansible.server ({{ mail_display | default('Ansible Automated Mail') }})"
+      to: "{{mail_to}}"
+      attach: "{{mail_attachments}}"
+    delegate_to: localhost
+    when: "mail_attachments is defined"
+
+#~# End Role
+...

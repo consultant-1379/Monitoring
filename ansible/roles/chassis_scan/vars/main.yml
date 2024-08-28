@@ -1,0 +1,12 @@
+---
+auth_combos:
+  - {root: 'shroot'}
+#~# The below are already set to the defaults in the module. Only uncomment them to override.
+# These paths are relative to where we login on the remote system. Paramiko doesn't understand ~.
+# authorized_key_directory: '.ssh'
+# authorized_key_location: '.ssh/authorized_keys'
+# The private key will be taken from ansible.cfg if it is specified there.
+# If it is not configured in ansible.cfg, the below will be used by default:
+# private_key_location: '~/.ssh/id_rsa'
+# public_key_location: '~/.ssh/id_rsa.pub'
+...

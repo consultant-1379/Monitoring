@@ -1,0 +1,16 @@
+---
+#~# Role for updating ilo firmware
+
+- name: Update ilo firmware
+  delegate_to: localhost
+  apply_ilo_firmware:
+    ip_address:   "{{ inventory_hostname }}"
+    ilo_username: "{{ ilo_username }}"
+    ilo_password: "{{ ilo_password }}"
+    firmware_location: "{{ playbook_dir }}/../hpilo_fw"
+  register: firmware_result
+
+- debug:
+    var: firmware_result
+#~# End Role
+...

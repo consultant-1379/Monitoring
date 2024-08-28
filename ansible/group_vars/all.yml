@@ -1,0 +1,9 @@
+---
+ilo_username: 'monadmin'
+ilo_password: 'm0nadmin$123'
+ilo_licence: '3N9QDVTSH8KD4JLTNGLBNKLTB'  #~# Dashes " - " removed from licence as older ilo version will not support them and break hpilo. New versions are smart enough to insert the " - "
+pip_required_packages:
+  - xmltodict
+  - python-hpilo
+  - netaddr
+...

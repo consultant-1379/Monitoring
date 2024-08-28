@@ -1,0 +1,13 @@
+---
+#~# Role for adding ilo User Accounts
+
+- name: Check ilo User Accounts
+  delegate_to: localhost
+  apply_ilo_users:
+    ip_address:   "{{ inventory_hostname }}"
+    ilo_username: "{{ ilo_username }}"
+    ilo_password: "{{ ilo_password }}"
+  register: user_result
+
+#~# End Role
+...

@@ -1,0 +1,25 @@
+---
+#~# 'ilo_roles_dependencies' role for installing any ILO Automation Dependencies
+
+  #------------------------------------------------------
+  - name: Any dependencies required via yum (Currently only python-pip)
+    yum:
+      name:
+        - python-pip
+      state: latest
+  #------------------------------------------------------
+  - name: Install Dependant Pip Packages
+    pip:
+      name: "{{pip_required_packages}}"
+  #------------------------------------------------------
+  - name: Add hpilo_cli config file (~/.ilo.conf)
+    copy:
+      dest: ~/.ilo.conf
+      content: |
+        [ilo]
+        login = {{ilo_username}}
+        password = {{ilo_password}}
+  #------------------------------------------------------
+
+#~# End Role
+...

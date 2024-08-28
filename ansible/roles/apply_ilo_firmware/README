@@ -1,0 +1,41 @@
+
+#########################################################
+###     Role : apply_ilo_firmware Usage (HP ONLY)     ###
+#########################################################
+Purpose:
+    Update the ILO firmware on a provided ILO IP address
+
+Structure:
+    tasks:
+        - main.yml
+    library:
+        - apply_ilo_firmware.py
+
+main.yml:
+    Calls on the custom ansible role "library/apply_ilo_firmware.py"
+
+    Requirements: (
+        ip_address host var [xx.xx.xx.xx]
+        ilo_username group var [username]
+        ilo_password group var [password]
+    )
+
+    +-------------- Call Custom Role --------------+
+    |   apply_ilo_firmware:                        |
+    |       ip_address:     "{{ ip_address }}"     |
+    |       ilo_username:   "{{ ilo_username }}"   |
+    |       ilo_password:   "{{ ilo_password }}"   |
+    +----------------------------------------------+
+
+apply_ilo_firmware.py:
+    Takes the passed "{{ ip_address }}", "{{ ilo_username }}", "{{ ilo_password }}" and tries to connect via the hpilo python module.
+    It then polls the ILO for the current ILO firmware version.
+    If it is less than the set latest version, then it will upgrade following the set steps.
+    ILO will be upgraded to each step until latest level reached.
+
+    Requirements: Manually set in module(
+        MAX_FW_VERSION : string - Example->"2.55"
+        FIRMWARE_STEPS : list() - Example->['1.05','1.40','2.00']
+        FW_LOCATIONS: dict() - Example->{'1.05': '/path/to/bin/file','1.40': '/path/to/bin/file'}
+    )
+

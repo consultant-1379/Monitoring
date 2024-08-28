@@ -1,0 +1,41 @@
+---
+#~# Role for checking the firmware version of a given ILO
+
+- name: Check ILO Firmware Version
+  block:
+    #~# Create both results files, just run once
+    - name: Create both results .csv files if they dont currently exist
+      copy:
+        content: "IP Address,Firmware Version,ILO Type"
+        dest: "{{item}}"
+        force: no
+      run_once: true
+      with_items:
+       - "{{playbook_dir}}/playbook_reports/ilo_fw_vers_check-{{ '%Y-%m-%d' | strftime }}.csv"
+       - "{{playbook_dir}}/playbook_reports/ilo_fw_vers_check_FAILS-{{ '%Y-%m-%d' | strftime }}.csv"
+    #~# Task to check the firmware version
+    - name: Check ILO Firmware Version
+      command: hpilo_cli {{ inventory_hostname }} get_fw_version
+      register: command_result
+    #~# Just output the std output information
+    # - debug: var=command_result.stdout
+    #~# Output the successful Firmware version retrieval to a csv file with the stdout result
+    - name: Print Successful Firmware Versions details to file - ilo_fw_vers_check.csv
+      lineinfile:
+        create: yes
+        state: present
+        dest: "{{playbook_dir}}/playbook_reports/ilo_fw_vers_check-{{ '%Y-%m-%d' | strftime }}.csv"
+        line: "{{ inventory_hostname }},{{ command_result.stdout_lines[2] | replace(',','') }},{{ command_result.stdout_lines[4] | replace(',','') | replace('}','') }}"
+      when: "'firmware_version' in command_result.stdout"
+  rescue:
+    #~# Just output the std error information
+    # - debug: var=command_result.stderr_lines
+    #~# Output the failed Firmware version retrieval to a csv file with the stderr result
+    - name: Print Unsuccessful Firmware Versions details to file - ilo_fw_vers_check_FAILS.csv
+      lineinfile:
+        dest: "{{playbook_dir}}/playbook_reports/ilo_fw_vers_check_FAILS-{{ '%Y-%m-%d' | strftime }}.csv"
+        line: "{{ inventory_hostname }},{{ command_result.stderr_lines | last }},Unknown"
+      when: "'hpilo' in command_result.stderr"
+
+#~# End Role
+...

@@ -1,0 +1,20 @@
+{% for n in range(16) %}
+{% set hydra_name_search = hydra_chassis | selectattr('hostname', 'search', task_output.result.hostname) | list %}
+{% set hydra_inv_search = hydra_chassis | selectattr('hostname', 'search', inventory_hostname) | list %}
+{% set bay = (n+1)|string %}
+{% if hydra_name_search | length == 1 %}
+{% set chassis_location = hydra_name_search[0]['equipman_cabinet_position'] %}
+{% set chassis_serial = hydra_name_search[0]['serial_no'] %}
+{% elif hydra_inv_search | length == 1 %}
+{% set chassis_location = hydra_inv_search[0]['equipman_cabinet_position'] %}
+{% set chassis_serial = hydra_inv_search[0]['serial_no'] %}
+{% else %}
+{% set chassis_location = 'Unknown' %}
+{% set chassis_serial = 'Unknown' %}
+{% endif %}
+{% if bay in task_output.result.bays %}
+{{ chassis_location }}, {{ task_output.result.hostname }}, {{ chassis_serial }}, {{ dns_oa1 }}, {{ ip_oa1 }}, {{ dns_oa2 }}, {{ ip_oa2 }}, {{ bay }}, N, {{ task_output.result.bays[bay].mgmtdnsname }}, {{ task_output.result.bays[bay].mgmtipaddr }}, {{ task_output.result.bays[bay].iloversion }}, {{ task_output.result.bays[bay].mgmtfwversion }}, {{ task_output.result.bays[bay].hostname }}, {{ task_output.result.bays[bay].bsn }}, {{ task_output.result.bays[bay].status }}, {{ task_output.result.bays[bay].powerstate }}, {{ task_output.result.bays[bay].spn }}
+{% else %}
+{{ chassis_location }}, {{ task_output.result.hostname }}, {{ chassis_serial }}, {{ dns_oa1 }}, {{ ip_oa1 }}, {{ dns_oa2 }}, {{ ip_oa2 }}, {{ bay }}, Y
+{% endif %}
+{% endfor %}

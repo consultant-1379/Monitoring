@@ -1,0 +1,39 @@
+
+########################################################
+###     Role : apply_ilo_licence Usage (HP ONLY)     ###
+########################################################
+Purpose:
+    Apply the latest ILO licence on a provided ILO IP address
+
+Structure:
+    tasks:
+        - main.yml
+    library:
+        - apply_ilo_licence.py
+
+main.yml:
+    Calls on the custom ansible role "library/apply_ilo_licence.py"
+
+    Requirements: (
+        ip_address host var [xx.xx.xx.xx]
+        ilo_username group var [username]
+        ilo_password group var [password]
+    )
+
+    +-------------- Call Custom Role --------------+
+    |   apply_ilo_licence:                         |
+    |       ip_address:     "{{ ip_address }}"     |
+    |       ilo_username:   "{{ ilo_username }}"   |
+    |       ilo_password:   "{{ ilo_password }}"   |
+    +----------------------------------------------+
+
+apply_ilo_licence.py:
+    Takes the passed "{{ ip_address }}", "{{ ilo_username }}", "{{ ilo_password }}" and tries to connect via the hpilo python module.
+    It then polls the ILO for the current ILO licence installed.
+    If there is none installed or it is not the latest licnce, then it will apply the new licence key.
+    Check will then be performed again to verify successful application.
+
+    Requirements: Manually set in module(
+        NEW_LICENCE_KEY : string - Example->"333T96HZXGKBGMKCZ3XV344M2"
+    )
+

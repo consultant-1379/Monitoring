@@ -1,0 +1,121 @@
+---
+# Ansible playbook to poll an inventory of Chassis OA addresses
+# This playbook/roles have certain dependancies of packages being installed on the running machine.
+# By default, the playbook will install all dependancies (role - ilo_roles_dependencies).
+#
+# NB: REQUIREMENT TO POPULATE THE CHASSIS HOSTS CSV FILE WITH A LIST OF CHASSIS OA IP ADDRESSES
+#     TO PERFORM ACTIONS AGAINST
+#     - File : <repo>/ansibe/host_files/chassis_oas.csv
+#     - Example:
+#         <oa1_name>,<oa1_ip>,<oa2_name>,<oa2_ip>
+#         <oa1_name>,<oa1_ip>,<oa2_name>,<oa2_ip>
+#         <oa1_name>,<oa1_ip>,<oa2_name>,<oa2_ip>
+#         <oa1_name>,<oa1_ip>,<oa2_name>,<oa2_ip>
+#
+# Usage:
+# ------
+# Playbook/Role will attempts to Query each Chassis OA for its XML Metadata.
+# Role will then federate that data & generate a report/results file with all the details.
+#   - <repo>/ansibe/chassis_reports/
+# Role will then Send an Email attaching the generated Report to the specified users in the playbook.
+#
+# It is required that the inventory script inventory_scripts/chassis_inventory.py is ran on exectution with playbook
+# This inventory script parses the csv hosts file & generates ansible hosts group
+#
+#   ansible-playbook -i inventory_scripts/chassis_inventory.py chassis_scan.yml
+#
+
+#
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles:
+    #~# Will Ensure all the Playbook/Role Dependancies are installed on the local Machine
+    - role: ilo_roles_dependencies
+
+- hosts: chassis
+  connection: local
+  name: Query Chassis Status
+  gather_facts: False
+  vars:
+    output_file: "chassis_report-{{ '%Y-%m-%d' | strftime }}.csv"
+    output_file_location: "{{playbook_dir}}/chassis_reports/{{ output_file }}"
+    hydra_url: "https://hydra.gic.ericsson.se"
+    search_params: "?provider_id=829&template_ci_id=483512&limit=1000"
+  pre_tasks:
+    - block:
+      # CI = Physical asset
+      # provider_id=829 -> Hydra Team (GST-IEAT Installation) https://hydra.gic.ericsson.se/team/829/view
+      # template_ci_id=483512 -> Hydra CI Type (Template: chassis) https://hydra.gic.ericsson.se/template_ci/483512/view
+
+      - name: Pull down the Hyrda Chassis Information
+        uri:
+          url: "{{ hydra_url }}/api/7.0/ci{{ search_params }}"
+          headers:
+            Authorization: "6033486a3fe2df1cc6e2d251ab97b49eda90e3ea"
+            verify: 'hydra.cer'
+          return_content: yes
+          validate_certs: no
+        register: chassis_result
+      - name: Set the hydra_chassis variables
+        set_fact:
+          hydra_chassis: "{{ chassis_result.json.result }}"
+      run_once: true
+  tasks:
+    - include_role:
+        name: chassis_scan
+    - name: 'Create Ovirt Capacity Results file "{{ output_file }}"'
+      copy:
+        dest: "{{ output_file_location }}"
+        content: |
+          Chassis_location,Chassis_hostname,Chassis_serial_num,OA1_name,OA1_ip,OA2_name,OA2_ip,Chassis_bay,Bay_empty,Bay_hostname,Bay_ip,ILO_type,ILO_fw,Blade_hostname,Blade_serial_num,Blade_status,Power_state,Blade_type
+      run_once: true
+    - name: 'Generate the chassis bays data'
+      set_fact:
+        line_var: "{{ lookup('template', '{{playbook_dir}}/templates/format_print_data.j2') }}"
+    - name: 'Insert Chassis Bays data to "{{ output_file_location }}"'
+      shell: 'echo "{{ line_var|trim }}" >> {{ output_file_location }}'
+    - name: 'Add localhost as inventory with hostvars'
+      add_host:
+        run_once: true
+        groups: "mygroup"
+        name: "localhost"
+        hydra_chassis: "{{ hydra_chassis }}"
+        file_to_Send: "{{ output_file_location }}"
+
+
+- hosts: mygroup
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: 'Will now send file {{ file_to_Send }} as attachment to email'
+      debug:
+        msg: "{{ file_to_Send }}"
+    - name: Send Email attaching the generated CSV Results file {{ file_to_Send }}
+      include_role:
+        name: send_mail
+      vars:
+        mail_to:
+          - "mossey.fahey@ericsson.com"
+          - "patrick.dowdall@ericsson.com"
+          - "vijay.machado@ericsson.com"
+          - "eoin.o.sullivan@ericsson.com"
+        mail_subject: Chassis Report {{ '%Y-%m-%d' | strftime }} Results
+        mail_attachments:
+          - "{{ file_to_Send }}"
+          - "{{playbook_dir}}/host_files/chassis_oas.csv"
+        mail_display: Ansible Chassis Scan Automated Mail
+        mail_message: |
+          'Hi,
+           Please see attached chassis Scan results files for {{ "%d-%m-%Y" | strftime }}.
+
+           Bear in mind that this automation is running off a static Chassis list attached (chassis_oas.csv).
+           Should any new entries/chassis need to be checked please send them onto me (chassis name & oa1|2 IP addresses)
+
+           Thanks,
+           Ansible Server!
+
+           NB: This is an Automated mail. Do Not Reply!'
+
+
+...
